@@ -1,171 +1,57 @@
-<!doctype html>
-<html lang="hu">
-<head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Név beküldés</title>
-  <style>
-    body { font-family: Arial, Helvetica, sans-serif; margin: 24px; max-width: 900px; }
-    label { display: block; margin: 10px 0 6px; font-weight: 600; }
-    input[type="text"] { width: min(420px, 100%); padding: 10px; }
-    button { padding: 10px 14px; margin-top: 10px; cursor: pointer; }
-    .hint { color: #666; font-size: 0.95em; }
-    .error { color: #b00020; margin-top: 10px; }
-    .group { margin-top: 18px; }
-    .group h3 { margin: 0 0 8px; font-size: 1.05em; }
-    ul { margin: 0 0 0 18px; }
-    li { margin: 4px 0; }
-    .small { font-size: 0.9em; color: #666; }
-    .row { display: flex; gap: 10px; align-items: flex-end; flex-wrap: wrap; }
-  </style>
-</head>
-<body>
+<h1>Felhasználónév beküldés</h1>
 
-  <h1>Felhasználónév beküldés</h1>
+<form id="form">
+  <label for="username">Felhasználónév javaslat:</label>
 
-  <form id="form">
-    <label for="username">Felhasználónév</label>
-    <div class="row">
-      <input id="username" type="text" name="username" placeholder="pl. KovacsBela" autocomplete="off" required maxlength="40" />
-      <button type="submit">Mentés</button>
-    </div>
-    <div class="hint">A beküldés dátum szerint listázva jelenik meg.</div>
-    <div id="error" class="error" style="display:none;"></div>
-  </form>
+  <div class="row">
+    <input
+      id="username"
+      type="text"
+      placeholder="pl. KovacsBela"
+      autocomplete="off"
+      required
+      maxlength="40"
+    />
+    <button type="submit">Beküldés</button>
+  </div>
 
-  <h2>Beküldött nevek</h2>
-  <div id="list"></div>
+  <div id="status" style="margin-top:10px; color: #166534;"></div>
+  <div id="error" style="margin-top:10px; color: #b00020;"></div>
+</form>
 
-  <script>
-    const STORAGE_KEY = "username_submissions_v1";
+<script>
+  const form = document.getElementById("form");
+  const input = document.getElementById("username");
+  const statusEl = document.getElementById("status");
+  const errorEl = document.getElementById("error");
 
-    const form = document.getElementById("form");
-    const input = document.getElementById("username");
-    const list = document.getElementById("list");
-    const errorEl = document.getElementById("error");
+  function setStatus(msg) { statusEl.textContent = msg; }
+  function setError(msg) { errorEl.textContent = msg; }
 
-    function showError(msg) {
-      errorEl.textContent = msg;
-      errorEl.style.display = "block";
-    }
+  form.addEventListener("submit", async (e) => {
+    e.preventDefault();
+    setError("");
+    setStatus("");
 
-    function clearError() {
-      errorEl.textContent = "";
-      errorEl.style.display = "none";
-    }
+    const username = input.value.trim();
+    if (!username) return setError("Kérlek adj meg egy felhasználónevet.");
 
-    function normalizeUsername(s) {
-      // Egyszerű normalizálás: trim és kezdő/lezáró szóközök eltávolítása
-      return s.trim();
-    }
+    // TODO: add meg a backend endpointod URL-jét
+    const endpoint = "https://A_TE_BACKEND_ENDPOINTED/submit";
 
-    function todayKey() {
-      // Dátum bontáshoz: YYYY-MM-DD a helyi időzónában
-      const d = new Date();
-      const yyyy = d.getFullYear();
-      const mm = String(d.getMonth() + 1).padStart(2, "0");
-      const dd = String(d.getDate()).padStart(2, "0");
-      return `${yyyy}-${mm}-${dd}`;
-    }
-
-    function loadAll() {
-      const raw = localStorage.getItem(STORAGE_KEY);
-      if (!raw) return [];
-      try {
-        return JSON.parse(raw);
-      } catch {
-        return [];
-      }
-    }
-
-    function saveAll(items) {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(items));
-    }
-
-    function render() {
-      const items = loadAll();
-
-      // Csoportosítás dátum szerint
-      // item: { username: string, date: YYYY-MM-DD, ts: number }
-      const groups = new Map();
-      for (const it of items) {
-        if (!groups.has(it.date)) groups.set(it.date, []);
-        groups.get(it.date).push(it);
-      }
-
-      // Dátumok rendezése (legújabb elöl)
-      const dates = Array.from(groups.keys()).sort((a, b) => (b.localeCompare(a)));
-
-      // Egyszerű lista renderelés
-      list.innerHTML = "";
-
-      if (items.length === 0) {
-        const p = document.createElement("p");
-        p.className = "small";
-        p.textContent = "Még nincs beküldés.";
-        list.appendChild(p);
-        return;
-      }
-
-      for (const date of dates) {
-        const groupDiv = document.createElement("div");
-        groupDiv.className = "group";
-
-        const h3 = document.createElement("h3");
-        h3.textContent = date;
-
-        const ul = document.createElement("ul");
-        const arr = groups.get(date);
-
-        // Ugyanezen a napon belül rendezés beküldési idő szerint
-        arr.sort((x, y) => x.ts - y.ts);
-
-        for (const it of arr) {
-          const li = document.createElement("li");
-          li.textContent = it.username;
-          ul.appendChild(li);
-        }
-
-        groupDiv.appendChild(h3);
-        groupDiv.appendChild(ul);
-        list.appendChild(groupDiv);
-      }
-    }
-
-    form.addEventListener("submit", (e) => {
-      e.preventDefault();
-      clearError();
-
-      const val = normalizeUsername(input.value);
-      if (!val) {
-        showError("Kérlek adj meg egy felhasználónevet.");
-        return;
-      }
-
-      // (Opcionális) egyszerű karakterkorlát
-      // Ha szeretnéd, szigoríthatod: pl. csak betű/szám/_/- engedve
-      if (val.length > 40) {
-        showError("Túl hosszú felhasználónév (max. 40 karakter).");
-        return;
-      }
-
-      const items = loadAll();
-
-      const date = todayKey();
-      items.push({
-        username: val,
-        date,
-        ts: Date.now()
-      });
-
-      saveAll(items);
-      input.value = "";
-      render();
+    const r = await fetch(endpoint, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ username })
     });
 
-    // Inicial render
-    render();
-  </script>
+    if (!r.ok) {
+      const t = await r.text().catch(() => "");
+      setError("Hiba történt a mentésnél. " + (t || ""));
+      return;
+    }
 
-</body>
-</html>
+    setStatus("Sikeres beküldés!");
+    input.value = "";
+  });
+</script>
