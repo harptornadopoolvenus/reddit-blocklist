@@ -1,22 +1,19 @@
-<h1>Felhasználónév beküldés</h1>
-
 <form id="form">
-  <label for="username">Felhasználónév javaslat:</label>
+  <div>Felhasználónév javaslat:</div>
 
-  <div class="row">
-    <input
-      id="username"
-      type="text"
-      placeholder="pl. KovacsBela"
-      autocomplete="off"
-      required
-      maxlength="40"
-    />
-    <button type="submit">Beküldés</button>
-  </div>
+  <input
+    id="username"
+    type="text"
+    placeholder="pl. KovacsBela"
+    autocomplete="off"
+    required
+    maxlength="40"
+  />
 
-  <div id="status" style="margin-top:10px; color: #166534;"></div>
-  <div id="error" style="margin-top:10px; color: #b00020;"></div>
+  <button type="submit">Beküldés</button>
+
+  <div id="status" style="margin-top:10px;"></div>
+  <div id="error" style="margin-top:10px; color:#b00020;"></div>
 </form>
 
 <script>
@@ -25,19 +22,15 @@
   const statusEl = document.getElementById("status");
   const errorEl = document.getElementById("error");
 
-  function setStatus(msg) { statusEl.textContent = msg; }
-  function setError(msg) { errorEl.textContent = msg; }
-
   form.addEventListener("submit", async (e) => {
     e.preventDefault();
-    setError("");
-    setStatus("");
+    statusEl.textContent = "";
+    errorEl.textContent = "";
 
     const username = input.value.trim();
-    if (!username) return setError("Kérlek adj meg egy felhasználónevet.");
+    if (!username) { errorEl.textContent = "Adj meg egy felhasználónevet."; return; }
 
-    // TODO: add meg a backend endpointod URL-jét
-    const endpoint = "https://A_TE_BACKEND_ENDPOINTED/submit";
+    const endpoint = "https://github.com/harptornadopoolvenus/submissions-backend/submit";
 
     const r = await fetch(endpoint, {
       method: "POST",
@@ -47,11 +40,11 @@
 
     if (!r.ok) {
       const t = await r.text().catch(() => "");
-      setError("Hiba történt a mentésnél. " + (t || ""));
+      errorEl.textContent = "Hiba történt a mentésnél." + (t ? " " + t : "");
       return;
     }
 
-    setStatus("Sikeres beküldés!");
+    statusEl.textContent = "Sikeres beküldés!";
     input.value = "";
   });
 </script>
