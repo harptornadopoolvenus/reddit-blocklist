@@ -1,5 +1,11 @@
 #aktív felhasználónevek 
+#testing:
+# Pixito
+
+# éles lista
 PenaltyConsistent253
 Defiant-Warning-8930
 Defiant-Cut-4220
-Pixito
+PenaltyConsistent253
+Extreme_Touch_9447
+RealisticPop44
