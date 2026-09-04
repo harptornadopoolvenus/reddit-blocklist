@@ -15,6 +15,8 @@ LevelBeginning37
 CollectionSlight9829
 JuiceLoose6516
 Born-Stop1053
+Flimsy-Plenty2412
+Wrong_Net9904
 
 # ↑ éles lista ↑
 #testing:
